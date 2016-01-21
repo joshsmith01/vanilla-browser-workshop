@@ -9,14 +9,14 @@ Prior to your arrival the following should be installed on your system:
 0. [Install Git][git-scm]
 0. [Install Node.js 4.2 LTS][node-install]
 0. Setup NPM for non-sudo installation
-    0. NPM is the node package manager.  It will automatically be installed when you install node.
-    0. NPM installs packages *locally* (within the directory it is invoked in) for per-project modules, or *globally* for packages you want accessible everywhere.
-    0. However, by default NPM installs global packages in a root-restricted location, requiring SUDO to install.  This creates a **huge** headache.  As an alternative, _before_ you install any packages, follow [this guide][npm-g-without-sudo] to configure your NPM to install in your home directory without requiring sudo.
+  0. NPM is the node package manager.  It will automatically be installed when you install node.
+  0. NPM installs packages *locally* (within the directory it is invoked in) for per-project modules, or *globally* for packages you want accessible everywhere.
+  0. However, by default NPM installs global packages in a root-restricted location, requiring SUDO to install.  This creates a **huge** headache.  As an alternative, _before_ you install any packages, follow [this guide][npm-g-without-sudo] to configure your NPM to install in your home directory without requiring sudo.
 0. Clone this repository `git clone git@github.com:sandiegojs/vanilla-browser-workshop.git`
 0. Change directories into the workshop folder: `cd vanilla-browser-workshop` and install your local dependencies with: `npm install`
 0. Install these global dependencies using the `-g` flag (ex `npm install <package> -g`)
-    * gulp
-    * mocha
+  * gulp
+  * mocha
 0. If you plan to deploy your app onto Heroku, setup [Heroku Toolbelt][heroku-toolbelt]
 
 
@@ -231,7 +231,7 @@ For now, we are going to focus on `querySelector`. This function behaves similar
 
 Lets begin by selecting the input with a name attribute of `name`.
 
-    var inputName = document.querySelector('input[name="name"]')
+  var inputName = document.querySelector('input[name="name"]')
 
 This returns us an [`HTMLInputElement`][html-input] which has a `value` property available. Go ahead and set the value property to see an example of how you can change the DOM.
 
@@ -315,94 +315,230 @@ To start create a new file called `main.js` in the app directory.
 Our first step in this new file is to get a reference to the form element. Create a variable named `form`, and assign 
 the form DOM element on the page to it.
 
-`var form = document.querySelector('form')`
+```js
+  var form = document.querySelector('form')
+```
 
 On the next line create a `submitHandler` function. We will need to have the event passed into the handler available to 
 us so add the parameter `evt` to the function declaration.
 
-`function submitHandler(evt) {}`
+```js
+  function submitHandler(evt) {}
+```
 
 We will be using the `preventDefault` method on the event object. This handy method will stop the form from submitting 
 to the backend so that we can submit this information using AJAX. Let's also throw in an `alert` so that we can see some 
 feedback from the submit handler. Otherwise, when we click on the submit button nothing will happen which can be 
 confusing. Add the two new commands to the submit handler declaration like below. 
 
-```
-function submitHandler (evt) {
+```js
+  function submitHandler (evt) {
     evt.preventDefault()
     alert('submit!')
-}
+  }
 ```
 
 The final step is to hook the form element we acquired above to the submit handler just after it. Use the 
 `addEventListener` method on the form variable and pass in the event we want to listen for (submit) as well as the 
 custom handler we wrote.
 
-`form.addEventListener('submit', submitHandler)`
+```js
+  form.addEventListener('submit', submitHandler)
+```
 
 Now refresh your page and you should be able to submit the form after filling out the two required fields, but instead 
 of the page refreshing and losing everything you've entered the page will show you an alert and you won't lose any of 
 the information you typed. Cool!
 
 
-## Build XHR and submit
+## Build XHR
 
-Now that we have our data we need to send it to the server using an XHR or [`XMLHttpRequest`](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest). 
+Now that we have our data we need to send it to the server using an XHR or [`XMLHttpRequest`][mdn-xhr]. 
 This allows us to communicate with the server without changing pages then do some action based on the data we get back.
-Let's create a function we can put in our event handlers.
+Let's create a function we can put in our event handlers. Create an `xhr` file in the `app` directory, and add the 
+function below inside it.
+
 ```js
-var xhr = function (method, path, data, callback) {
+  var xhr = function (method, path, data, callback) {
     // Rest of the code will go in here
-};
+  };
 ```
 
-First we create a new instance of XHR.
+The first thing we do inside the xhr function is we create a new instance of XHR.
+
 ```js
-    var request = new XMLHttpRequest();
+  var request = new XMLHttpRequest();
 ```
 
 Next we'll use `open( method, path, async)` to initialize the request.
- - `method` just a string of an HTTP method to use, such as 'GET', 'POST', 'PUT', 'DELETE'. (This will match the Verb on the API table up top.)
- - `path` simply a string of the full path to send the request to.  
- - `async` a boolean flag that dictates whether the script should run asynchronously.
 
-**ProTip™:** `async` should always be `true` to prevent blocking. Stopping JavaScript execution especially hurts time sensitive things like rendering or event listening/handling. 
+- `method` just a string of an HTTP method to use, such as 'GET', 'POST', 'PUT', 'DELETE'. (This will match the Verb on the API table up top.)
+- `path` simply a string of the full path to send the request to.  
+- `async` a boolean flag that dictates whether the script should run asynchronously.
+
+**ProTip™:** `async` should always be `true` to prevent blocking. Stopping JavaScript execution especially hurts time sensitive things like rendering or event listening/handling.
+ 
 ```js
-    request.open(method, path, true);
+  request.open(method, path, true);
 ```
 
-
-XHR only has one event we care about and that's [onreadystatechange](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/onreadystatechange) (all lowercase). 
+XHR only has one event we care about and that's [onreadystatechange][mdn-onreadystatechange] (all lowercase). 
 Here we're looking for the last state `4` which is triggered when the request operation is complete.
-We'll also check to make sure we got a good server respose, then send the data back though a callback.
-```js
-    request.onreadystatechange = function () {
-        
-        // ignore anything that isn't the last state
-        if (request.readyState !== 4) return;
-        
-        // if we didn't get a 200 OK status send back an error
-        if (request.readyState === 4 && request.status !== 200) callback(new Error('XHR Failed: ' + path), null);
-        
-        // return our server data
-        callback(null, request.responseText);
-        
-    };
-```
+We'll also check to make sure we got a good server response, then send the data back though a callback.
 
+```js
+  request.onreadystatechange = function () {
+    
+    // ignore anything that isn't the last state
+    if (request.readyState !== 4) return;
+    
+    // if we didn't get a 200 OK status send back an error
+    if (request.readyState === 4 && request.status !== 200) callback(new Error('XHR Failed: ' + path), null);
+    
+    // return our server data
+    callback(null, request.responseText);
+    
+  };
+```
 
 Lastly just close and send the request with our data using the `send` function.
+
 ```js
-    request.send(data);
+  request.send(data);
 ```
 
-Now we're ready to use it!
+Since we plan on using this xhr function in many parts of the app let's expose it to anyone who wants to use it. We're 
+using [Browserify][browserify] in our build process. This means if we write our xhr logic as a 
+[Node.js module][node-module] then it will automatically be exported in a way that can be used in the browser. Add the 
+following line to the bottom of the file.
+ 
 ```js
-xhr('GET', '/forms', null, function (err, data) {
+  module.exports = xhr;
+```
+
+Now we're ready to use it! First, because we have exposed xhr as a Node.js module we can use it from `index.js` with 
+the following line.
+
+```js
+  var xhr = require('xhr');
+```
+
+To test that everything went well, now we run the xhr function to get all the forms currently in the backend.
+
+```js
+  xhr('GET', '/forms', null, function (err, data) {
     if (err) throw err;
     console.log(data);
     
-});
+  });
+```
+
+You should now see a collection of previously entered forms in the console. Here's an example of what you should see.
+
+```
+[
+  {
+    "id": 1,
+    "name": "Testy McTesterson",
+    "email": "test@sandiegojs.org",
+    "city": "San Diego",
+    "state": "CA",
+    "github": "testdev",
+    "twitter": "testtwitter",
+    "bio": "Lorem Ipsum...",
+    "created_at": "2016-01-21T07:09:01.640Z",
+    "updated_at": "2016-01-21T07:09:01.640Z"
+  },
+  {
+    "id": 2,
+    "name": "Testa Two",
+    "email": "t2@sandiegojs.org",
+    "city": "San Diego",
+    "state": "CA",
+    "github": "testathedev",
+    "twitter": "testahere",
+    "bio": "Teh kitteh approves.",
+    "created_at": "2016-01-21T07:11:01.640Z",
+    "updated_at": "2016-01-21T07:11:01.640Z"
+  },
+  ...
+]
+```
+
+Great! Now you can see first hand just how easy native JavaScript is to work with.
+
+**If you get tripped up here or anywhere else, reach out to one of the instructors!**
+
+## Submit the form
+
+Alright, we can connect to the backend and get a list of forms. This is great, but now it's time to connect the form 
+submission we've been intercepting to the backend to store the contents of the form.
+
+First, we'll create a module that will collect all the useful methods we need work with Forms (with a capital F). 
+Because we know we will use the previously created xhr module in this new module, let's include now before we go any 
+further. Create a new `FormProvider.js` in the app directory, and add `var xhr = require('xhr')` to the top of it. 
+ 
+Create an object named FormProvider inside of the file. Then, populate this object with a method called `getAll`. Add a 
+single parameter called `callback` to the method.
+
+```js
+  var FormProvider = {
+    getAll: function (callback) {
+    }
+  }
+```
+
+Next, move the previous xhr call you made in `index.js` into the getAll method. Change the `console.log(data);` command to 
+`callback(data);`
+
+```js
+  xhr('GET', '/forms', null, function (err, data) {
+    if (err) throw err
+    callback(data)
+  })
+```
+
+Finally, set the FormProvider to module.exports so that it is accessible by anyone that uses our FormProvider module.
+
+```js
+module.exports = FormProvider
+```
+
+Now, let's test by calling `FormProvider.getAll` from index.js like we did earlier when we tested the xhr function. Add 
+`var FormProvider = require('FormProvider')` at the top of the page and run the command below.
+
+```js
+  FormProvider.getAll(function (forms) {
+    console.log('===== Forms from FormProvider =====')
+    console.log(forms)
+  })
+```
+
+Cool, now that we have a working FormProvider module let's add another method. Add a new method called `add` with two 
+parameters below the implementation of the `getAll` method. The first parameter should be `data` and the second should 
+be `callback`. 
+
+```js
+  var FormProvider = {
+    getAll: function (callback) {
+      ...
+    },
+    add: function (data, callback) {
+    }
+  }
+```
+
+We will perform an xhr request here just like in getAll, but we will be posting the data that gets passed in to the 
+method. In addition, before we send the data we need to make transform it so that it follows the backend's protocol for 
+posting data.
+
+```js
+  var transformedData = []
+  for (var i in data) {
+    transformedData.push('form[' + i + ']=' + data[i])
+  }
+  var requestBody = transformedData.join('&')
+  xhr('POST', '/forms', requestBody, callback)
 ```
 
 ## Handle request
@@ -642,13 +778,13 @@ function clearError(field){
 
 ```
 ...
-    if (isValid(field)) {
-      // remove error styles and messages
-      clearError(field);
-    } else {
-      // style field, show error, etc.
-      setError(field);
-    }
+  if (isValid(field)) {
+    // remove error styles and messages
+    clearError(field);
+  } else {
+    // style field, show error, etc.
+    setError(field);
+  }
 ...
 ```
 
@@ -683,15 +819,15 @@ function isValid(field){
 0. When the state is invalid, set a custom validity message. When it is not, set an empty string.
 
 ```
-    ...
-    if (validStates.indexOf(field.value) === -1) {
-      // invalid state
-      field.setCustomValidity('Use CA, TX, or NY');
-    } else {
-      // valid state
-      field.setCustomValidity('');
-    }
-    ...
+  ...
+  if (validStates.indexOf(field.value) === -1) {
+    // invalid state
+    field.setCustomValidity('Use CA, TX, or NY');
+  } else {
+    // valid state
+    field.setCustomValidity('');
+  }
+  ...
 ```
 
 Now when you try to submit without a state or an invalid state, you will get an error message just like with name and email.
@@ -714,6 +850,7 @@ That's it for validation! You may now add "HTML5 constraint validation API" to y
 
 Read [Getting Started with Node.js on Heroku][node-heroku] for more information.
 
+[browserify]: http://browserify.org/
 [cookies]: https://devdocs.io/dom/document/cookie
 [css-selector]: https://developer.mozilla.org/en-US/docs/Web/Guide/CSS/Getting_Started/Selectors
 [devdocs]: http://devdocs.io
@@ -729,10 +866,13 @@ Read [Getting Started with Node.js on Heroku][node-heroku] for more information.
 [localhost]: http://localhost:3000
 [mdn]: https://developer.mozilla.org/en-US/
 [mdn-events]: https://developer.mozilla.org/en-US/docs/Web/Events
+[mdn-onreadystatechange]: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/onreadystatechange
 [mdn-validations]: https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5/Constraint_validation
+[mdn-xhr]: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
 [mocha]: https://devdocs.io/mocha/
 [mouse-event]: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
 [node-install]: https://nodejs.org/download/
+[node-module]: https://nodejs.org/docs/latest/api/modules.html
 [npm-g-without-sudo]: https://github.com/sindresorhus/guides/blob/master/npm-global-without-sudo.md
 [san diego js]: http://sandiegojs.org/
 [xhr]: https://devdocs.io/dom/xmlhttprequest
