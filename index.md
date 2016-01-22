@@ -596,6 +596,9 @@ instead of an object literal.
   });
 ```
 
+Now, try filling out and submitting the form. It should collect the data in the form and submit a post similar to the 
+test we performed recently.
+
 ## Handle request
 
 ## Dom creation to rendered returned info
