@@ -316,7 +316,7 @@ Our first step in this new file is to get a reference to the form element. Creat
 the form DOM element on the page to it.
 
 ```js
-  var form = document.querySelector('form')
+  var form = document.querySelector('.add-form')
 ```
 
 On the next line create a `submitHandler` function. We will need to have the event passed into the handler available to 
@@ -416,7 +416,7 @@ following line to the bottom of the file.
   module.exports = xhr;
 ```
 
-Now we're ready to use it! First, because we have exposed xhr as a Node.js module we can use it from `index.js` with 
+Now we're ready to use it! First, because we have exposed xhr as a Node.js module we can use it from `test.js` with 
 the following line.
 
 ```js
@@ -426,7 +426,7 @@ the following line.
 To test that everything went well, now we run the xhr function to get all the forms currently in the backend.
 
 ```js
-  xhr('GET', '/forms', null, function (err, data) {
+  xhr('GET', 'https://sandiegojs-vanilla-workshop.herokuapp.com/forms', null, function (err, data) {
     if (err) throw err;
     console.log(data);
     
@@ -488,11 +488,11 @@ single parameter called `callback` to the method.
   }
 ```
 
-Next, move the previous xhr call you made in `index.js` into the getAll method. Change the `console.log(data);` command to 
+Next, move the previous xhr call you made in `test.js` into the getAll method. Change the `console.log(data);` command to 
 `callback(data);`
 
 ```js
-  xhr('GET', '/forms', null, function (err, data) {
+  xhr('GET', 'https://sandiegojs-vanilla-workshop.herokuapp.com/forms', null, function (err, data) {
     if (err) throw err
     callback(data)
   })
@@ -504,7 +504,7 @@ Finally, set the FormProvider to module.exports so that it is accessible by anyo
 module.exports = FormProvider
 ```
 
-Now, let's test by calling `FormProvider.getAll` from index.js like we did earlier when we tested the xhr function. Add 
+Now, let's test by calling `FormProvider.getAll` from `test.js` like we did earlier when we tested the xhr function. Add 
 `var FormProvider = require('FormProvider')` at the top of the page and run the command below.
 
 ```js
@@ -529,16 +529,71 @@ be `callback`.
 ```
 
 We will perform an xhr request here just like in getAll, but we will be posting the data that gets passed in to the 
-method. In addition, before we send the data we need to make transform it so that it follows the backend's protocol for 
+method. In addition, before we send the data we need to transform it so that it follows the backend's protocol for 
 posting data.
 
 ```js
   var transformedData = []
   for (var i in data) {
-    transformedData.push('form[' + i + ']=' + data[i])
+    transformedData.push('form[' + i + ']=' + encodeURIComponent(data[i]))
   }
   var requestBody = transformedData.join('&')
-  xhr('POST', '/forms', requestBody, callback)
+  xhr('POST', 'https://sandiegojs-vanilla-workshop.herokuapp.com/forms', requestBody, callback)
+```
+
+Let's test this out in our `test.js` file.
+
+```js
+  FormProvider.add({
+    name: 'Testy McTesterson',
+    email: 'test@sandiegojs.org'
+  }, function (response) {
+    console.log(response);
+  });
+```
+
+Refresh the page and you should see a post in the Network tab of the developer tools as well as new log in the console.
+
+```
+{
+  "id": 1,
+  "name": "Testy McTesterson",
+  "email": "test@sandiegojs.org",
+  "city": null,
+  "state": null,
+  "github": null,
+  "twitter": null,
+  "bio": null,
+  "created_at": "2016-01-22T09:00:00.000Z",
+  "updated_at": "2016-01-22T09:00:00.000Z"
+}
+```
+
+The final step is to use the values entered in the form as part of the values used in the call to `add`. To do this we 
+start with a `formObject` variable that we'll fill with data. Place this 
+
+```js
+var formObject = {};
+```
+
+Next, loop through each value in the form and if it's value is populated set a matching property on formObject with the 
+form value. You can follow the code below as an example for the rest.
+
+```js
+var inputName = document.querySelector('.add-form input[name="name"]')
+if (inputName.value) {
+    formObject.name = inputName.value
+}
+```
+
+Once you've gone through all the inputs then it's time to send it. It's almost identical to the earlier call you made 
+to `FormProvider.add`. The only difference is that you will pass in the formObject as the first parameter of the method 
+instead of an object literal.
+
+```js
+  FormProvider.add(formObject, function (response) {
+    console.log(response);
+  });
 ```
 
 ## Handle request
