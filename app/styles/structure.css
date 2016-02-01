@@ -1,9 +1,13 @@
 .content {
   display: flex;
+  justify-content: center;
 }
 .content .form-wrapper {
   width: 16rem;
 }
 .content .response-wrapper {
   width: 20rem;
+}
+h1 {
+    text-align: center;
 }

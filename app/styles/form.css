@@ -92,3 +92,7 @@ select{
 .input-group .required{
   color:red;
 }
+.field-error {
+  box-shadow: 0 0 8px #ff0000;
+  border: 1px solid #ff0000;
+}
